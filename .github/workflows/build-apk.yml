@@ -39,6 +39,29 @@ jobs:
           unzip -q NovaPlayer-Android-Starter.zip -d extracted
           cp -R extracted/NovaPlayer/. .
 
+      - name: Align Java and Kotlin targets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("app/build.gradle.kts")
+          s = p.read_text()
+
+          old = "    buildFeatures { compose = true }"
+          new = """    compileOptions {
+              sourceCompatibility = JavaVersion.VERSION_17
+              targetCompatibility = JavaVersion.VERSION_17
+          }
+          kotlinOptions {
+              jvmTarget = "17"
+          }
+          buildFeatures { compose = true }"""
+
+          if old not in s:
+              raise SystemExit("Could not find expected buildFeatures line")
+          p.write_text(s.replace(old, new, 1))
+          PY
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
